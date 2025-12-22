@@ -2045,8 +2045,8 @@ Access system monitoring:
 
 **Monitor:**
 - **System Health**: Uptime, response times
-- **Database Performance**: Query times, storage
-- **API Status**: Endpoint availability
+- **Firebase Performance**: Query times, storage
+- **Firebase Status**: Service availability
 - **Firebase Usage**: Reads, writes, storage
 - **Error Logs**: System errors and warnings
 - **User Activity**: Concurrent users, page views
@@ -2206,16 +2206,16 @@ Access audit logs:
 
 ### Advanced Administration
 
-#### API Management (if applicable)
+#### Firebase Integration Management
 
-**API Keys:**
-- Generate API keys for integrations
-- Set permissions per key
-- Monitor API usage
-- Revoke keys if needed
+**Firebase Services:**
+- Monitor Firebase quota usage
+- Configure Firebase settings
+- Manage Firebase security rules
+- Review Firebase usage reports
 
 **Webhooks:**
-- Configure webhook endpoints
+- Configure webhook endpoints (if using Cloud Functions)
 - Test webhook deliveries
 - Monitor webhook logs
 - Retry failed webhooks
@@ -2229,14 +2229,14 @@ Access audit logs:
 - Webhook setup
 
 **Communication Services:**
-- Email service (SendGrid, AWS SES)
-- SMS provider (Twilio, etc.)
-- Push notifications (FCM)
+- Email service (Firebase Extensions, SendGrid, AWS SES)
+- SMS provider (Firebase Extensions, Twilio, etc.)
+- Push notifications (Firebase Cloud Messaging)
 
 **Third-Party Services:**
-- Google Maps API
+- Google Maps (via Firebase)
 - Weather services
-- Analytics (Google Analytics)
+- Firebase Analytics / Google Analytics
 - Support chat (Intercom, etc.)
 
 ### Best Practices for Administrators
@@ -3220,28 +3220,29 @@ Starbike is a responsive web application that works seamlessly on mobile devices
    - Screenshot of error
    - Browser and device info
 
-#### API or Database Errors
+#### Firebase Connection Errors
 
 **Problem**: "Failed to connect" or "Database error"
 
 **Solutions:**
 1. **Wait and Retry**: May be temporary
 2. **Check Connection**: Verify internet is working
-3. **Try Later**: May be server maintenance
-4. **Different Device**: Test on another device
-5. **Contact Support**: If persistent
+3. **Try Later**: May be Firebase maintenance
+4. **Check Firebase Console**: Verify services are operational
+5. **Different Device**: Test on another device
+6. **Contact Support**: If persistent
 
-#### CORS Errors (Development)
+#### Firebase Security Rules Errors
 
 **For Developers Only**
 
-**Problem**: Cross-origin request blocked (in console)
+**Problem**: Permission denied errors
 
 **Solutions:**
-1. Ensure backend is running on correct port
-2. Check CORS configuration in backend
-3. Verify frontend URL is allowed
-4. Check for typos in API endpoints
+1. Check Firebase Console → Firestore → Rules
+2. Verify authentication is working
+3. Ensure rules allow your operation
+4. Check user role claims match security rules
 
 ### When Nothing Works
 
@@ -3601,7 +3602,7 @@ We're here to help! Here are all the ways you can get support.
 
 - **User Manual**: Comprehensive guide (you're reading it!)
 - **Technical Manual**: Installation and setup guide (for admins/developers)
-- **API Documentation**: For developers and integrations
+- **Firebase Documentation**: For developers and integrations
 - **FAQ Section**: Quick answers to common questions
 
 ### Contact Support
@@ -3818,7 +3819,7 @@ Extra services or items available with a rental, such as helmets, GPS devices, i
 User role with complete system access, including user management, system configuration, and full oversight.
 
 **API (Application Programming Interface)**  
-Technical interface that allows different software systems to communicate. Used for integrations and external services.
+Technical interface that allows different software systems to communicate. Starbike uses Firebase APIs to interact with authentication, database, and storage services.
 
 **Authentication**  
 The process of verifying user identity, typically through email and password.
@@ -3835,7 +3836,7 @@ A rental request or reservation for a motorcycle or e-bike for a specific period
 Unique identifier assigned to each booking for tracking and support purposes.
 
 **Backend**  
-Server-side components of the system, including the Laravel API and database.
+Server-side components of the system, primarily Firebase services (Firestore, Authentication, Storage).
 
 ### C
 
@@ -3857,7 +3858,7 @@ User role for people renting vehicles. Has access to browse, book, and manage re
 Main landing page after login, showing overview and quick access to key features.
 
 **Database**  
-Where all system data is stored (Firestore for main app, SQLite/MySQL for Laravel API).
+Where all system data is stored. Starbike uses Firebase Firestore, a cloud-based NoSQL database.
 
 **Deposit**  
 Security amount held to cover potential damages or violations.
@@ -3930,8 +3931,6 @@ Metric used to measure system performance and business success.
 
 ### L
 
-**Laravel**  
-PHP framework used for the backend API.
 
 **Late Fee**  
 Additional charge applied when vehicle returned after agreed time.
@@ -4090,10 +4089,10 @@ List of approved IP addresses or domains.
 
 ### Abbreviations
 
-- **API**: Application Programming Interface
 - **CSV**: Comma-Separated Values
 - **CRUD**: Create, Read, Update, Delete
-- **DB**: Database
+- **DB**: Database  
+- **FCM**: Firebase Cloud Messaging
 - **JSON**: JavaScript Object Notation
 - **PDF**: Portable Document Format
 - **SMS**: Short Message Service

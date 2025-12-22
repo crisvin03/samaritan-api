@@ -47,15 +47,10 @@ Starbike/
 │   │   ├── pages/              # Route pages (user/admin/staff)
 │   │   ├── context/            # React context providers
 │   │   ├── firebase/           # Firebase configuration
-│   │   ├── services/           # API services
+│   │   ├── services/           # Firebase services
 │   │   └── utils/              # Utility functions
 │   ├── public/                 # Static assets
 │   └── dist/                   # Production build output
-│   └── user-management-api/    # Laravel API
-│       ├── app/                # Application code
-│       ├── database/           # Migrations & seeders
-│       ├── routes/             # API routes
-│       └── public/             # Public entry point
 ├── functions/                   # Firebase Cloud Functions (optional)
 ├── docs/                       # Documentation
 └── firebase.json               # Firebase configuration
@@ -71,9 +66,6 @@ Starbike/
 |----------|---------|---------|
 | Node.js | 18.x or higher | Frontend development and build |
 | npm or pnpm | Latest | Package management |
-| PHP | 8.2 or higher | Backend API |
-| Composer | 2.x | PHP dependency management |
-| SQLite | 3.x | Default database (or MySQL/PostgreSQL) |
 | Git | Latest | Version control |
 
 ### Firebase Requirements
@@ -107,17 +99,22 @@ Starbike/
 ### High-Level Architecture
 
 ```
-┌─────────────────┐         ┌──────────────────┐
-│   React Frontend │◄───────►│  Firebase Auth   │
-│   (Port 5173)    │         │  & Firestore     │
-└────────┬─────────┘         └──────────────────┘
-         │
-         │ REST API
-         ▼
-┌─────────────────┐         ┌──────────────────┐
-│  Laravel API    │◄───────►│ SQLite/MySQL DB  │
-│  (Port 8000)    │         │                  │
-└─────────────────┘         └──────────────────┘
+┌─────────────────────┐
+│   React Frontend    │
+│   (Port 5173)       │
+│   Vite Dev Server   │
+└──────────┬──────────┘
+           │
+           │ Firebase SDK
+           ▼
+┌──────────────────────┐
+│   Firebase Services  │
+├──────────────────────┤
+│  • Authentication    │
+│  • Firestore DB      │
+│  • Storage           │
+│  • Cloud Functions   │
+└──────────────────────┘
 ```
 
 ### User Roles & Access Control
@@ -150,14 +147,8 @@ node --version  # Should be 18.x or higher
 # Check npm version
 npm --version
 
-# Check PHP version
-php --version  # Should be 8.2 or higher
-
-# Check Composer version
-composer --version
-
-# Check SQLite installation
-sqlite3 --version
+# Check Git installation
+git --version
 ```
 
 ---
@@ -261,125 +252,6 @@ const firebaseConfig = {
 
 ---
 
-## Backend Setup (Laravel API)
-
-### Step 1: Navigate to Laravel Directory
-
-```bash
-cd starbike-frontend/user-management-api
-```
-
-### Step 2: Install PHP Dependencies
-
-```bash
-composer install
-```
-
-If you encounter memory issues:
-
-```bash
-COMPOSER_MEMORY_LIMIT=-1 composer install
-```
-
-### Step 3: Environment Configuration
-
-```bash
-# Copy environment file
-cp .env.example .env
-
-# Generate application key
-php artisan key:generate
-```
-
-### Step 4: Configure Database
-
-Edit `.env` file:
-
-#### Option A: SQLite (Default, Recommended for Development)
-
-```env
-DB_CONNECTION=sqlite
-DB_DATABASE=/absolute/path/to/starbike-frontend/user-management-api/database/database.sqlite
-```
-
-Create the database file:
-
-```bash
-# Linux/Mac
-touch database/database.sqlite
-
-# Windows (PowerShell)
-New-Item database/database.sqlite -ItemType File
-```
-
-#### Option B: MySQL
-
-```env
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=starbike_db
-DB_USERNAME=your_username
-DB_PASSWORD=your_password
-```
-
-Create the MySQL database:
-
-```sql
-CREATE DATABASE starbike_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
-
-#### Option C: PostgreSQL
-
-```env
-DB_CONNECTION=pgsql
-DB_HOST=127.0.0.1
-DB_PORT=5432
-DB_DATABASE=starbike_db
-DB_USERNAME=your_username
-DB_PASSWORD=your_password
-```
-
-### Step 5: Run Migrations
-
-```bash
-# Run database migrations
-php artisan migrate
-
-# (Optional) Seed sample data
-php artisan db:seed
-```
-
-### Step 6: Configure CORS
-
-Edit `config/cors.php` or use the built-in CORS middleware settings:
-
-```php
-'allowed_origins' => ['http://localhost:5173', 'http://127.0.0.1:5173'],
-'allowed_methods' => ['*'],
-'allowed_headers' => ['*'],
-'exposed_headers' => [],
-'max_age' => 0,
-'supports_credentials' => false,
-```
-
-For production, update `allowed_origins` with your production domain.
-
-### Step 7: Test API Installation
-
-```bash
-# Start Laravel development server
-php artisan serve
-```
-
-API will be available at: `http://localhost:8000`
-
-Test endpoints:
-- `http://localhost:8000/api/users` - List users
-- Import Postman collection from `postman/User_Management_API.postman_collection.json`
-
----
-
 ## Frontend Setup (React + Vite)
 
 ### Step 1: Navigate to Frontend Directory
@@ -436,33 +308,16 @@ Production files will be in the `dist/` directory.
 
 ### Frontend Environment Variables
 
-Create `.env` file in `starbike-frontend/`:
+Create `.env` file in `starbike-frontend/` (optional):
 
 ```env
-VITE_API_URL=http://localhost:8000/api
 VITE_APP_NAME=Starbike
+VITE_FIREBASE_API_KEY=your_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
+VITE_FIREBASE_PROJECT_ID=your_project_id
 ```
 
-### Backend Environment Variables
-
-Key settings in `starbike-frontend/user-management-api/.env`:
-
-```env
-APP_NAME=Starbike
-APP_ENV=local
-APP_DEBUG=true
-APP_URL=http://localhost:8000
-
-# Database (see Database Setup section)
-DB_CONNECTION=sqlite
-
-# CORS
-CORS_ALLOWED_ORIGINS=http://localhost:5173
-
-# Logging
-LOG_CHANNEL=stack
-LOG_LEVEL=debug
-```
+**Note**: For security in production, consider using environment variables instead of hardcoding Firebase config. However, Firebase client-side keys are safe to expose as they're protected by Firebase security rules.
 
 ---
 
@@ -512,61 +367,25 @@ LOG_LEVEL=debug
 }
 ```
 
-### Laravel Database Tables
-
-Tables created by migrations:
-- `users` - User management records
-- `password_reset_tokens` - Password reset tokens
-- `sessions` - User sessions (if using database sessions)
-
 ---
 
 ## Running the Application
 
 ### Development Mode
 
-#### Option 1: Run Separately (Recommended for Debugging)
+**Start the development server:**
 
-**Terminal 1 - Backend:**
-```bash
-cd starbike-frontend/user-management-api
-php artisan serve
-```
-
-**Terminal 2 - Frontend:**
 ```bash
 cd starbike-frontend
 npm run dev
 ```
 
-#### Option 2: Using Concurrent Runners
-
-Install concurrently (if not already installed):
-```bash
-npm install -g concurrently
-```
-
-Create a start script in project root `package.json`:
-```json
-{
-  "scripts": {
-    "dev": "concurrently \"cd starbike-frontend/user-management-api && php artisan serve\" \"cd starbike-frontend && npm run dev\"",
-    "dev:frontend": "cd starbike-frontend && npm run dev",
-    "dev:backend": "cd starbike-frontend/user-management-api && php artisan serve"
-  }
-}
-```
-
-Then run:
-```bash
-npm run dev
-```
+The application will start at `http://localhost:5173`
 
 ### Access the Application
 
 - **Frontend**: http://localhost:5173
-- **Backend API**: http://localhost:8000
-- **API Documentation**: http://localhost:8000/api/documentation (if configured)
+- **Firebase Console**: https://console.firebase.google.com (for database/auth management)
 
 ### Default User Roles
 
@@ -595,26 +414,15 @@ npm run lint
 npm run lint -- --fix
 ```
 
-### Backend Testing
+### Firebase Testing
 
+**Test Firebase Connection:**
 ```bash
-cd starbike-frontend/user-management-api
-
-# Run PHPUnit tests
-php artisan test
-
-# Run specific test
-php artisan test --filter UserTest
-
-# Generate code coverage report
-php artisan test --coverage
+cd starbike-frontend
+# The app includes Firebase test utilities in src/utils/
+# Run the dev server and check browser console for connection status
+npm run dev
 ```
-
-### API Testing with Postman
-
-1. Import collection: `user-management-api/postman/User_Management_API.postman_collection.json`
-2. Create environment with variable `base_url` = `http://localhost:8000`
-3. Test all endpoints
 
 ### Manual Testing Checklist
 
@@ -683,154 +491,18 @@ npm run build
 firebase deploy --only hosting
 ```
 
-### Backend Deployment
-
-#### Option 1: Traditional VPS (Nginx + PHP-FPM)
-
-**1. Server Requirements:**
-- Ubuntu 20.04+ or similar
-- Nginx or Apache
-- PHP 8.2+ with required extensions
-- Composer
-- SSL certificate (Let's Encrypt recommended)
-
-**2. Deploy Steps:**
-
-```bash
-# On server, clone repository
-git clone <repository-url> /var/www/starbike-api
-
-# Navigate to API directory
-cd /var/www/starbike-api/starbike-frontend/user-management-api
-
-# Install dependencies
-composer install --no-dev --optimize-autoloader
-
-# Configure environment
-cp .env.example .env
-nano .env  # Update for production
-
-# Set production values
-APP_ENV=production
-APP_DEBUG=false
-APP_URL=https://api.yourdomain.com
-
-# Generate key and run migrations
-php artisan key:generate
-php artisan migrate --force
-
-# Optimize
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-
-# Set permissions
-sudo chown -R www-data:www-data storage bootstrap/cache
-sudo chmod -R 775 storage bootstrap/cache
-```
-
-**3. Nginx Configuration:**
-
-Create `/etc/nginx/sites-available/starbike-api`:
-
-```nginx
-server {
-    listen 80;
-    server_name api.yourdomain.com;
-    root /var/www/starbike-api/starbike-frontend/user-management-api/public;
-
-    add_header X-Frame-Options "SAMEORIGIN";
-    add_header X-Content-Type-Options "nosniff";
-
-    index index.php;
-
-    charset utf-8;
-
-    location / {
-        try_files $uri $uri/ /index.php?$query_string;
-    }
-
-    location = /favicon.ico { access_log off; log_not_found off; }
-    location = /robots.txt  { access_log off; log_not_found off; }
-
-    error_page 404 /index.php;
-
-    location ~ \.php$ {
-        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
-        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
-        include fastcgi_params;
-    }
-
-    location ~ /\.(?!well-known).* {
-        deny all;
-    }
-}
-```
-
-Enable site and restart Nginx:
-
-```bash
-sudo ln -s /etc/nginx/sites-available/starbike-api /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl restart nginx
-```
-
-**4. SSL Certificate:**
-
-```bash
-sudo apt install certbot python3-certbot-nginx
-sudo certbot --nginx -d api.yourdomain.com
-```
-
-#### Option 2: Railway.app
-
-1. Create account at [Railway.app](https://railway.app)
-2. Connect GitHub repository
-3. Configure:
-   - Root directory: `starbike-frontend/user-management-api`
-   - Start command: `php artisan serve --host=0.0.0.0 --port=$PORT`
-4. Add environment variables from `.env`
-5. Deploy
-
-#### Option 3: Heroku
-
-```bash
-# Install Heroku CLI
-curl https://cli-assets.heroku.com/install.sh | sh
-
-# Login
-heroku login
-
-# Create app
-heroku create starbike-api
-
-# Add buildpack
-heroku buildpacks:set heroku/php
-
-# Set environment variables
-heroku config:set APP_KEY=$(php artisan key:generate --show)
-heroku config:set APP_ENV=production
-heroku config:set APP_DEBUG=false
-
-# Deploy
-git subtree push --prefix starbike-frontend/user-management-api heroku main
-
-# Run migrations
-heroku run php artisan migrate --force
-```
 
 ### Post-Deployment Checklist
 
 - [ ] Update Firebase config with production URLs
-- [ ] Configure CORS for production domains
-- [ ] Set up SSL certificates
-- [ ] Configure production database
-- [ ] Set environment variables
+- [ ] Configure Firebase security rules for production
+- [ ] Set up SSL certificates (automatic with most hosts)
+- [ ] Set environment variables (if using)
 - [ ] Test all authentication flows
-- [ ] Verify API endpoints
+- [ ] Verify Firestore access
 - [ ] Check error logging
-- [ ] Set up monitoring (optional)
-- [ ] Configure backups
+- [ ] Set up monitoring (Firebase Analytics)
+- [ ] Configure Firebase backups
 - [ ] Update DNS records
 
 ---
@@ -845,14 +517,6 @@ heroku run php artisan migrate --force
 4. **XSS Prevention**: Use React's built-in escaping
 5. **HTTPS**: Always use HTTPS in production
 
-### Backend Security
-
-1. **Environment**: Set `APP_DEBUG=false` in production
-2. **CORS**: Restrict to known origins only
-3. **Rate Limiting**: Configure API rate limits
-4. **SQL Injection**: Use Laravel's query builder or Eloquent ORM
-5. **Authentication**: Implement proper token validation
-6. **File Permissions**: Ensure correct permissions on storage directories
 
 ### Firebase Security
 
@@ -876,22 +540,23 @@ heroku run php artisan migrate --force
 
 ### Common Issues and Solutions
 
-#### Issue 1: Frontend Can't Connect to Backend
+#### Issue 1: Frontend Can't Connect to Firebase
 
-**Symptoms**: CORS errors, API requests fail
+**Symptoms**: Authentication fails, Firestore errors
 
 **Solutions**:
 ```bash
-# 1. Check if backend is running
-curl http://localhost:8000/api/users
+# 1. Check Firebase config in src/firebase/config.js
+# Verify all credentials are correct
 
-# 2. Verify CORS configuration in Laravel
-# Edit config/cors.php and add frontend URL
+# 2. Check Firebase Console
+# - Authentication is enabled
+# - Firestore is created
+# - Security rules are configured
 
-# 3. Clear Laravel config cache
-cd starbike-frontend/user-management-api
-php artisan config:clear
-php artisan cache:clear
+# 3. Check browser console for specific errors
+
+# 4. Clear browser cache and cookies
 ```
 
 #### Issue 2: Firebase Authentication Loops
@@ -916,25 +581,26 @@ auth.onAuthStateChanged((user) => {
 });
 ```
 
-#### Issue 3: Database Migration Errors
+#### Issue 3: Firestore Data Not Saving
 
-**Symptoms**: Migration fails, table already exists errors
+**Symptoms**: Data doesn't persist, permission errors
 
 **Solutions**:
-```bash
-# Reset database (⚠️ Warning: Deletes all data)
-php artisan migrate:fresh
+1. **Check Security Rules**:
+   - Go to Firebase Console → Firestore → Rules
+   - Verify rules allow authenticated users to write
+   
+2. **Check Authentication**:
+   - User must be logged in
+   - Verify auth state in browser console
+   
+3. **Check Collection Names**:
+   - Ensure correct collection names in code
+   - Case-sensitive
 
-# Rollback last migration
-php artisan migrate:rollback
-
-# Check migration status
-php artisan migrate:status
-
-# For SQLite permission errors (Linux/Mac)
-chmod 664 database/database.sqlite
-chmod 775 database/
-```
+4. **Check Browser Console**:
+   - Look for specific Firestore errors
+   - May indicate quota limits or network issues
 
 #### Issue 4: npm install Failures
 
@@ -958,21 +624,19 @@ pnpm install
 
 #### Issue 5: Port Already in Use
 
-**Symptoms**: "Port 5173/8000 already in use"
+**Symptoms**: "Port 5173 already in use"
 
 **Solutions**:
 ```bash
 # Find process using port (Linux/Mac)
 lsof -ti:5173 | xargs kill -9
-lsof -ti:8000 | xargs kill -9
 
 # Windows PowerShell
 netstat -ano | findstr :5173
 taskkill /PID <PID> /F
 
-# Or use different ports
+# Or use different port
 npm run dev -- --port 3000
-php artisan serve --port=8001
 ```
 
 #### Issue 6: Firestore Permission Denied
@@ -1007,33 +671,30 @@ npm run lint
 # Clear Vite cache
 rm -rf node_modules/.vite
 
-# Check for TypeScript errors (if using TypeScript)
-npx tsc --noEmit
-
 # Try building with verbose output
 npm run build -- --debug
+
+# Check for circular dependencies
+npm list --depth=0
 ```
 
 ### Getting Help
 
 1. **Check Logs**:
    - Browser Console: F12 → Console tab
-   - Laravel Logs: `storage/logs/laravel.log`
    - Vite Logs: Terminal output
    - Firebase Console: Firebase Console → Usage and billing → Usage
 
 2. **Debug Mode**:
    ```bash
-   # Laravel debug mode (development only!)
-   APP_DEBUG=true
-   
    # React DevTools: Install browser extension
    # Firebase Debug: Enable in browser console
+   localStorage.setItem('debug', 'firebase:*')
    ```
 
 3. **Community Support**:
-   - Laravel Documentation: https://laravel.com/docs
    - React Documentation: https://react.dev
+   - Vite Documentation: https://vitejs.dev
    - Firebase Documentation: https://firebase.google.com/docs
    - Stack Overflow: Tag questions appropriately
 
@@ -1082,50 +743,32 @@ npm audit
 npm audit fix
 ```
 
-#### Backend Dependencies
-
-```bash
-cd starbike-frontend/user-management-api
-
-# Check for outdated packages
-composer outdated
-
-# Update packages
-composer update
-
-# Security check (requires sensiolabs/security-checker)
-composer require --dev sensiolabs/security-checker
-./vendor/bin/security-checker security:check
-```
-
 ### Backup Strategies
-
-#### Database Backup
-
-**SQLite:**
-```bash
-# Simple copy
-cp database/database.sqlite database/backups/database-$(date +%Y%m%d).sqlite
-
-# Automated daily backup (cron)
-0 2 * * * cp /path/to/database.sqlite /path/to/backups/db-$(date +\%Y\%m\%d).sqlite
-```
-
-**MySQL:**
-```bash
-# Backup
-mysqldump -u username -p starbike_db > backup-$(date +%Y%m%d).sql
-
-# Restore
-mysql -u username -p starbike_db < backup-20251222.sql
-```
 
 #### Firestore Backup
 
-Use Firebase CLI or Cloud Scheduler:
+**Automated Backups** (Firebase Blaze plan):
+1. Go to Firebase Console → Firestore → Backups
+2. Enable automatic backups
+3. Schedule: Daily, weekly, or monthly
+4. Retention period: Configure as needed
+
+**Manual Backup via Firebase CLI:**
 ```bash
+# Install Firebase CLI
+npm install -g firebase-tools
+
+# Login
+firebase login
+
 # Export Firestore data
-gcloud firestore export gs://your-bucket/backups/$(date +%Y%m%d)
+firebase firestore:export gs://your-bucket/backups/$(date +%Y%m%d)
+```
+
+**Import from Backup:**
+```bash
+# Restore Firestore data
+firebase firestore:import gs://your-bucket/backups/20251222
 ```
 
 #### Code Backup
@@ -1138,19 +781,21 @@ gcloud firestore export gs://your-bucket/backups/$(date +%Y%m%d)
 
 #### Application Monitoring
 
-- **Frontend**: Use Firebase Performance Monitoring or Google Analytics
-- **Backend**: Laravel Telescope (development) or log monitoring
+- **Frontend**: Firebase Performance Monitoring
+- **Analytics**: Firebase Analytics or Google Analytics
 - **Uptime**: UptimeRobot, Pingdom, or StatusCake
 - **Errors**: Sentry, Bugsnag, or Rollbar
+- **Firebase**: Built-in monitoring in Firebase Console
 
 #### Key Metrics to Monitor
 
-- Response times
+- Page load times
 - Error rates
 - User authentication success/failure
-- API endpoint usage
-- Database query performance
+- Firestore read/write operations
+- Firebase Storage usage
 - Firebase quota usage
+- User engagement metrics
 
 ---
 
@@ -1158,21 +803,13 @@ gcloud firestore export gs://your-bucket/backups/$(date +%Y%m%d)
 
 ### Useful Commands Reference
 
-#### Laravel Artisan
+#### npm Scripts
 
 ```bash
-php artisan list                    # List all commands
-php artisan make:controller Name    # Create controller
-php artisan make:model Name         # Create model
-php artisan make:migration name     # Create migration
-php artisan migrate                 # Run migrations
-php artisan migrate:rollback        # Rollback last migration
-php artisan db:seed                 # Seed database
-php artisan tinker                  # REPL
-php artisan route:list              # List all routes
-php artisan cache:clear             # Clear application cache
-php artisan config:clear            # Clear config cache
-php artisan view:clear              # Clear compiled views
+npm run dev                         # Start dev server
+npm run build                       # Build for production
+npm run preview                     # Preview production build
+npm run lint                        # Run linter
 ```
 
 #### Firebase CLI
@@ -1185,15 +822,6 @@ firebase deploy --only hosting      # Deploy hosting only
 firebase deploy --only functions    # Deploy functions only
 firebase serve                      # Serve locally
 firebase firestore:indexes          # Deploy Firestore indexes
-```
-
-#### npm Scripts
-
-```bash
-npm run dev                         # Start dev server
-npm run build                       # Build for production
-npm run preview                     # Preview production build
-npm run lint                        # Run linter
 ```
 
 ### Configuration Files Reference
@@ -1209,10 +837,6 @@ npm run lint                        # Run linter
 #### tailwind.config.js
 - Tailwind CSS configuration
 - Located: `starbike-frontend/tailwind.config.js`
-
-#### .env (Backend)
-- Environment variables for Laravel
-- Located: `starbike-frontend/user-management-api/.env`
 
 #### firebase.json
 - Firebase configuration
